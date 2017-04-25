@@ -32,7 +32,7 @@ void fileProc(void){
 		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 		printf("Done waiting...\n");
 		//process to write to user
-		int fd = open(fname, O_WRONLY, S_IRUSR | S_IWUSR);
+		int fd = open(fname, O_APPEND, S_IRUSR | S_IWUSR);
 		dup2(fd,1);
 		execvp(cmd2[0],cmd2);
 		close(fd);
