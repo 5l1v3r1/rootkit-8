@@ -9,10 +9,30 @@
 pid_t process_pid;
 
 void endProgram(void){
-	// 1. Unload the sneaky module using rmmod
 	char *rmCmd[] = {"rmmod","sneaky_mod.ko",0};
-	execvp(rmCmd[0],rmCmd);
-	// 2. Restore the /etc/passwd file by copying tmp/passwd into the file
+	char *cpCmd[] = {"cp", "/tmp/passwd", "/etc/passwd",0};
+	pid_t rmPid, cpPid;
+	int status;
+
+	rmPid = fork();
+	if(rmPid == 0){
+		// 1. Unload the sneaky module using rmmod
+		printf("unload mod...\n");
+		execvp(rmCmd[0],rmCmd);
+	}else{
+		do{
+			cpPid = waitpid(rmPid, &status, WUNTRACED | WCONTINUED);
+			if(cpPid == -1){
+				perror("waitpid");
+				exit(EXIT_FAILURE);
+			}
+		} while(!WIFEXITED(status) && !WIFSIGNALED(status));
+		printf(" restore file...\n");
+		// 2. Restore the /etc/passwd file by copying tmp/passwd into the file
+		execvp(cpCmd[0],cpCmd);
+		remove(cpCmd[1]);
+		printf("DONE\n");
+	}
 	
 }
 	
